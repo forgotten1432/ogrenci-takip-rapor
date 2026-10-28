@@ -1,8 +1,10 @@
 import 'dart:convert';
+import 'dart:js_interop';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:web/web.dart' as web;
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -139,12 +141,22 @@ class LocalStore extends ChangeNotifier {
   List<StudentRecord> students = [];
   List<LessonRecord> lessons = [];
   bool ready = false;
+  bool persistentStorage = false;
 
   String get className => _classes[classId] ?? _classes['hafizlik2']!;
   String get _storageKey => 'teacher_local_v1_$classId';
 
   Future<void> open() async {
     _prefs = await SharedPreferences.getInstance();
+    try {
+      final storage = web.window.navigator.storage;
+      persistentStorage = (await storage.persisted().toDart).toDart;
+      if (!persistentStorage) {
+        persistentStorage = (await storage.persist().toDart).toDart;
+      }
+    } catch (_) {
+      persistentStorage = false;
+    }
     await selectClass(classId, notify: false);
     ready = true;
     notifyListeners();
@@ -386,6 +398,31 @@ class DashboardPage extends StatelessWidget {
             color: Colors.teal.shade50,
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
             child: Text('جەمئىي ${active.length} ئوقۇغۇچى'),
+          ),
+          Container(
+            width: double.infinity,
+            color: store.persistentStorage
+                ? Colors.green.shade50
+                : Colors.amber.shade50,
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+            child: Row(
+              children: [
+                Icon(
+                    store.persistentStorage
+                        ? Icons.verified_user_outlined
+                        : Icons.info_outline,
+                    size: 17),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    store.persistentStorage
+                        ? 'بۇ تور بېكەتنىڭ سانلىق مەلۇماتى ئۈسكۈنىدە ساقلىنىدۇ.'
+                        : 'سانلىق مەلۇمات بۇ توركۆرگۈدە ساقلىنىدۇ؛ زاپاس چۈشۈرۈۋېلىڭ.',
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                ),
+              ],
+            ),
           ),
           if (onLeave.isNotEmpty)
             ExpansionTile(
@@ -960,7 +997,7 @@ Future<void> _backupDialog(BuildContext context, LocalStore store) async {
             mainAxisSize: MainAxisSize.min,
             children: [
               const Text(
-                  'سانلىق مەلۇمات بۇ ئۈسكۈنىدە ساقلىنىدۇ. زاپاس نۇسخىنى كۆچۈرۈپ ساقلاڭ.'),
+                  'زاپاسنى ئۈسكۈنىگە JSON ھۆججىتى قىلىپ چۈشۈرۈڭ ياكى كېيىن قايتا ئەكىرىڭ.'),
               const SizedBox(height: 12),
               TextField(
                 controller: controller,
@@ -976,6 +1013,10 @@ Future<void> _backupDialog(BuildContext context, LocalStore store) async {
           ),
         ),
         actions: [
+          TextButton(
+            onPressed: () => _downloadBackup(store),
+            child: const Text('ھۆججەت قىلىپ چۈشۈرۈش'),
+          ),
           TextButton(
             onPressed: () async {
               await Clipboard.setData(
@@ -1005,4 +1046,23 @@ Future<void> _backupDialog(BuildContext context, LocalStore store) async {
     ),
   );
   controller.dispose();
+}
+
+void _downloadBackup(LocalStore store) {
+  final blob = web.Blob(
+    [store.exportBackup().toJS].toJS,
+    web.BlobPropertyBag(type: 'application/json;charset=utf-8'),
+  );
+  final url = web.URL.createObjectURL(blob);
+  final anchor = web.document.createElement('a') as web.HTMLAnchorElement
+    ..href = url
+    ..download =
+        'ogrenci-takip-${store.classId}-${_dateKey(DateTime.now())}.json';
+  web.document.body?.append(anchor);
+  anchor.click();
+  anchor.remove();
+  Future<void>.delayed(
+    const Duration(minutes: 1),
+    () => web.URL.revokeObjectURL(url),
+  );
 }
