@@ -356,21 +356,7 @@ class DashboardPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xfff6f3f8),
       appBar: AppBar(
-        title: PopupMenuButton<String>(
-          tooltip: 'سىنىپ تاللاش',
-          onSelected: store.selectClass,
-          itemBuilder: (context) => _classes.entries
-              .map((e) => PopupMenuItem(value: e.key, child: Text(e.value)))
-              .toList(),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(store.className),
-              const SizedBox(width: 4),
-              const Icon(Icons.arrow_drop_down),
-            ],
-          ),
-        ),
+        title: Text(store.className),
         actions: [
           IconButton(
             tooltip: 'دوكلات',
