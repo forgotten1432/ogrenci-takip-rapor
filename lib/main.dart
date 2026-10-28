@@ -13,7 +13,7 @@ void main() {
 
 const _classes = <String, String>{
   'hafizlik1': 'قارىلىق 1-سىنىپ',
-  'hafizlik2': 'قارىلىق 2-سىنىپ',
+  'hafizlik2': 'ئىجازەت سىنىپى',
   'hafizlik3': 'قارىلىق 3-سىنىپ',
 };
 const _weekdays = <String>[
@@ -315,7 +315,7 @@ class _TeacherLocalAppState extends State<TeacherLocalApp> {
 
   @override
   Widget build(BuildContext context) => MaterialApp(
-        title: 'مىئراج قارىلىق سىنىپلىرى ئوقۇغۇچىلىرى',
+        title: 'مىئراج ئىجازەت سىنىپى ئوقۇغۇچىلىرى',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
